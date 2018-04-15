@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
 
     QChar separator = '|';
     int dateIndex = 0;
+    int patternIndex = 4;
     int logIndex = 6;
 
     if(parser.isSet(configOption))
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
         parser.showHelp(1);
     }
 
-    int lineCpt = 0;
+    int lineCpt = 1;
     QTextStream textStream(&inputFile);
 
     QDateTime lastLineTime;
@@ -79,18 +80,23 @@ int main(int argc, char *argv[])
         {
             auto delta = abs(timelog.msecsTo(lastLineTime));
             if(delta > 1000)
-                qWarning() << "Delta is " << timelog.msecsTo(lastLineTime) << " ms";
+                qWarning() << "Delta is " << lastLineTime.msecsTo(timelog) << " ms line " << lineCpt;
         }
         lastLineTime = timelog;
 
+        auto pattern = values[patternIndex].replace("#", "").trimmed().toInt();
         auto log = values[logIndex];
-        if(log.contains(RUN_TOOK))
+        if(pattern == 7200)
         {
-            log.remove(0, log.lastIndexOf(RUN_TOOK) + RUN_TOOK.length());
-            log.replace(MS, "");
-            log = log.trimmed();
-            auto taskDuration = log.toLongLong();
-            qInfo() << "Task lenght" << taskDuration;
+            if(log.contains(RUN_TOOK))
+            {
+                log.remove(0, log.lastIndexOf(RUN_TOOK) + RUN_TOOK.length());
+                log.replace(MS, "");
+                log = log.trimmed();
+                auto taskDuration = log.toLongLong();
+                if(taskDuration > 20)
+                    qInfo() << "Task lenght " << taskDuration << " ms line " << lineCpt;
+            }
         }
 
         lineCpt++;
