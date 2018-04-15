@@ -1,29 +1,29 @@
 #ifndef DATASTORE_H
 #define DATASTORE_H
 
-#include <QDateTime>
+#include <QList>
+
+#include "run.h"
 
 class DataStore
 {
 public:
-    void setFirstLog(const QDateTime& firstLog)
+    Run& createRun()
     {
-        m_dFirstLog = firstLog;
+        Run newRun;
+        newRun.setOutputFile(m_sOutputFile);
+        m_lRuns += newRun;
+        return m_lRuns.last();
     }
 
-    void setReadyLog(const QDateTime& readyLog)
+    void setOutputFile(const QString& outputFile)
     {
-        m_dReadyLog = readyLog;
-    }
-
-    qlonglong getLaunchTime() const
-    {
-        return m_dFirstLog.msecsTo(m_dReadyLog);
+        m_sOutputFile = outputFile;
     }
 
 private:
-    QDateTime m_dFirstLog;
-    QDateTime m_dReadyLog;
+    QString     m_sOutputFile;
+    QList<Run>  m_lRuns;
 };
 
 #endif // DATASTORE_H

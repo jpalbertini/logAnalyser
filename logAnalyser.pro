@@ -19,4 +19,6 @@ SOURCES += \
 
 HEADERS += \
     helper.h \
-    datastore.h
+    datastore.h \
+    run.h \
+    taskteps.h
