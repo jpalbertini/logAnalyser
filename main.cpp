@@ -10,6 +10,7 @@
 #include <QElapsedTimer>
 
 #include "helper.h"
+#include "datastore.h"
 
 const QString MS = "ms";
 const QString RUN_TOOK = "run took";
@@ -60,7 +61,9 @@ int main(int argc, char *argv[])
         parser.showHelp(1);
     }
 
+
     int lineCpt = 1;
+    DataStore ds;
     QTextStream textStream(&inputFile);
 
     QDateTime lastLineTime;
@@ -82,6 +85,8 @@ int main(int argc, char *argv[])
             if(delta > 1000)
                 qWarning() << "Delta is " << lastLineTime.msecsTo(timelog) << " ms line " << lineCpt;
         }
+        else
+            ds.setFirstLog(timelog);
         lastLineTime = timelog;
 
         auto pattern = values[patternIndex].replace("#", "").trimmed().toInt();
@@ -98,11 +103,14 @@ int main(int argc, char *argv[])
                     qInfo() << "Task lenght " << taskDuration << " ms line " << lineCpt;
             }
         }
+        else if(pattern == 9003)
+            ds.setReadyLog(timelog);
 
         lineCpt++;
     }
 
     qInfo() << "Analysis took " << tmr.elapsed() << " ms for " << lineCpt << " lines";
+    qInfo() << "Launched in " << ds.getLaunchTime() << " ms";
 
     return a.exec();
 }

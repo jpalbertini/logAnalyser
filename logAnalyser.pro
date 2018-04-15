@@ -18,4 +18,5 @@ SOURCES += \
         main.cpp
 
 HEADERS += \
-    helper.h
+    helper.h \
+    datastore.h
