@@ -32,13 +32,20 @@ public:
 
     void setTaskStepTime(qulonglong id, TaskSteps::TaskStep step, qint64 time)
     {
+        m_mTaskSteps[id].setID(id);
         m_mTaskSteps[id].setStep(step, time);
+    }
+
+    TaskSteps& getTaskSteps(qulonglong id)
+    {
+        m_mTaskSteps[id].setID(id);
+        return m_mTaskSteps[id];
     }
 
     void setTaskStepRunner(qulonglong id, const QString& runner)
     {
         m_mTaskSteps[id].setID(id);
-        m_mTaskSteps[id].setRunner(runner);
+        m_mTaskSteps[id].setRunnerName(runner);
         m_mRunnerLastTasks[runner] = id;
     }
 

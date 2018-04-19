@@ -153,9 +153,20 @@ int main(int argc, char *argv[])
             assert(splittedList.count() > 1);
 
             auto id = splittedList.first().toULongLong();
+            if(id == 0)
+                id++;
 
             currentRun.setTaskStepTime(id, patternToState(pattern), timelog);
             currentRun.setTaskStepRunner(id, runner);
+        }
+        else if(pattern == 7200 && runner.contains(SERVER_RUNNER) && log.contains("START TASK"))
+        {
+            auto splitList = log.split("/");
+            assert(splitList.count() == 3);
+
+            auto id = splitList[1].trimmed().toULongLong();
+            currentRun.setTaskStepTime(id, TaskSteps::TaskStep::ServerStart, timelog);
+            currentRun.getTaskSteps(id).setRunner(TaskSteps::TaskRunner::Slave);
         }
         else if(pattern == READY_STATE && runner.contains(SERVER_RUNNER))
             currentRun.setReadyLog(timelog);

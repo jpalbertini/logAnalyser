@@ -6,9 +6,16 @@
 class TaskSteps
 {
 public:
+    enum class TaskRunner
+    {
+        Server,
+        Slave
+    };
+
     enum class TaskStep
     {
         Unknown,
+        ServerStart,
         Pending,
         Prepare,
         Run,
@@ -26,9 +33,14 @@ public:
         m_mTasksTimes[step] = time;
     }
 
-    void setRunner(const QString& runner)
+    void setRunner(TaskRunner runner)
     {
-        m_sRunner = runner;
+        m_eRunner = runner;
+    }
+
+    void setRunnerName(const QString& runner)
+    {
+        m_sRunnerName = runner;
     }
 
     qint64 id() const
@@ -43,9 +55,24 @@ public:
 
     bool isValid() const
     {
+        /* Don't have unknown states */
         if(m_mTasksTimes.contains(TaskStep::Unknown))
             return false;
+
+        /* Slave queries must have a server start */
+        if(m_eRunner == TaskRunner::Slave && !m_mTasksTimes.contains(TaskStep::ServerStart))
+            return false;
+
+        /* Queries must have an end */
         if(!m_mTasksTimes.contains(TaskStep::Finished) && !m_mTasksTimes.contains(TaskStep::Canceled))
+            return false;
+
+        /* 5 Steps for a slave task */
+        if(m_eRunner == TaskRunner::Slave && m_mTasksTimes.count() != 5)
+            return false;
+
+        /* 4 Steps for a server task */
+        if(m_eRunner == TaskRunner::Server && m_mTasksTimes.count() != 4)
             return false;
 
         return true;
@@ -53,7 +80,8 @@ public:
 
 private:
     qint64                  m_iId;
-    QString                 m_sRunner;
+    TaskRunner              m_eRunner;
+    QString                 m_sRunnerName;
     QMap<TaskStep, qint64>  m_mTasksTimes;
 };
 
