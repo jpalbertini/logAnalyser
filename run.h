@@ -79,38 +79,52 @@ public:
         *stream << "Start took " << startTime() << " ms" << endl;
         *stream << "Number of tasks: " << m_mTaskSteps.count() << endl;
 
-        *stream << " -- Task analysis -- " << endl;
-        auto firstTask = m_mTaskSteps.values().first();
-        qint64 mMin = firstTask.length(), mMax = firstTask.length(), mAverage = firstTask.length();
-        qint64 mMinId = firstTask.id(), mMaxId = firstTask.id();
-        for(const auto& taskSteps: m_mTaskSteps.values())
+        if(m_mTaskSteps.count() > 0)
         {
-            auto length = taskSteps.length();
-            if(length > 0)
-            {
-                if(mMin > length)
-                {
-                    mMin = length;
-                    mMinId = taskSteps.id();
-                }
-                else if(mMax < length)
-                {
-                    mMax = length;
-                    mMaxId = taskSteps.id();
-                }
+            *stream << " -- Task analysis -- " << endl;
 
-                mAverage = (mAverage + length) / 2;
-            }
-            else
+            TaskSteps firstValid;
+            for(int i = 0 ; i < m_mTaskSteps.values().count() ; i++)
             {
-                *stream << "Weird task: " << taskSteps.id() << endl;
+                if(m_mTaskSteps.values()[i].isValid())
+                {
+                    firstValid = m_mTaskSteps.values()[i];
+                    break;
+                }
             }
+
+            qint64 mMin = firstValid.length(), mMax = firstValid.length(), mAverage = firstValid.length();
+            qint64 mMinId = firstValid.id(), mMaxId = firstValid.id();
+            for(const auto& taskSteps: m_mTaskSteps.values())
+            {
+                if(taskSteps.isValid())
+                {
+                    auto length = taskSteps.length();
+                    if(mMin > length)
+                    {
+                        mMin = length;
+                        mMinId = taskSteps.id();
+                    }
+                    else if(mMax < length)
+                    {
+                        mMax = length;
+                        mMaxId = taskSteps.id();
+                    }
+
+                    mAverage = (mAverage + length) / 2;
+                }
+                else
+                {
+                    *stream << "Weird task: " << taskSteps.id() << endl;
+                }
+            }
+
+            *stream << " -- Task Results -- " << endl;
+            *stream << "Task min length: " << mMin << " ms is " << mMinId << endl;
+            *stream << "Task average length: " << mAverage << " ms" << endl;
+            *stream << "Task max length: " << mMax << " ms is " << mMaxId << endl;
         }
 
-        *stream << " -- Task Results -- " << endl;
-        *stream << "Task min length: " << mMin << " ms is " << mMinId << endl;
-        *stream << "Task average length: " << mAverage << " ms" << endl;
-        *stream << "Task max length: " << mMax << " ms is " << mMaxId << endl;
         *stream << " -- Analysis Done -- " << endl;
 
         *stream << endl << endl;

@@ -10,18 +10,36 @@
 
 #include <signal.h>
 #include <stdlib.h>
+#include <cassert>
 
 #include "helper.h"
 #include "datastore.h"
 
 const QString MS = "ms";
-const QString START_LOGGER = "START LOGGER";
+const QString START_LOGGER = "=== Start logger ===";
 const QString RUN_TOOK = "run took";
-const QString PENDING = "Pending";
-const QString PREPARE = "Prepare";
-const QString RUN = "Run";
-const QString SENT = "Sent";
-const QString SLAVE_RUNNER = "dasslave";
+const QString SERVER_RUNNER = "dasserve";
+const QString SLAVE_RUNNER  = "dasslave";
+
+static constexpr const int READY_STATE      = 9003;
+static constexpr const int PENDING_STATE    = 7293;
+static constexpr const int PREPARE_STATE    = 7294;
+static constexpr const int RUN_STATE        = 7295;
+static constexpr const int FINISHED_STATE   = 7296;
+static constexpr const int CANCELED_STATE   = 7297;
+
+static TaskSteps::TaskStep patternToState(int pattern)
+{
+    switch (pattern)
+    {
+        case PENDING_STATE: return TaskSteps::TaskStep::Pending;
+        case PREPARE_STATE: return TaskSteps::TaskStep::Prepare;
+        case RUN_STATE: return TaskSteps::TaskStep::Run;
+        case FINISHED_STATE: return TaskSteps::TaskStep::Finished;
+        case CANCELED_STATE: return TaskSteps::TaskStep::Canceled;
+        default: return TaskSteps::TaskStep::Unknown;
+    }
+}
 
 static bool keepRunning = true;
 
@@ -108,7 +126,7 @@ int main(int argc, char *argv[])
             continue;
 
         auto values = currentLine.split(separator, QString::SkipEmptyParts);
-        if(values.isEmpty())
+        if(values.count() < 7)
             continue;
 
         auto timelog = QDateTime::fromString(parseDate(values[dateIndex]), "yyyy/MM/dd HH:mm:ss.zzz").toMSecsSinceEpoch();
@@ -116,7 +134,7 @@ int main(int argc, char *argv[])
         auto log = values[logIndex];
         auto runner = values[runnerIndex].trimmed();
 
-        if(log.contains(START_LOGGER))
+        if(log.contains(START_LOGGER) && runner.contains(SERVER_RUNNER))
         {
             if(currentRun.started())
             {
@@ -126,28 +144,20 @@ int main(int argc, char *argv[])
             currentRun.setStartLog(timelog);
         }
 
-        if(pattern == 7200)
+        if(pattern >= PENDING_STATE && pattern <= CANCELED_STATE)
         {
-            if(log.contains(PENDING) || log.contains(PREPARE) || log.contains(RUN))
-            {
-                auto firstSlice = log.split("[")[0];
-                auto id = firstSlice.split(" ").last().toULongLong();
-                if(log.contains(PENDING))
-                    currentRun.setTaskStepTime(id, TaskSteps::TaskStep::Pending, timelog);
-                else if(log.contains(PREPARE))
-                    currentRun.setTaskStepTime(id, TaskSteps::TaskStep::Prepare, timelog);
-                else if(log.contains(RUN))
-                    currentRun.setTaskStepTime(id, TaskSteps::TaskStep::Run, timelog);
+            auto spliceList = log.split("]");
+            assert(spliceList.count() >= 2);
 
-                currentRun.setTaskStepRunner(id, runner);
-            }
-            else if(log.contains(SENT) && runner.contains(SLAVE_RUNNER))
-            {
-                auto id = log.split(" ").last().toLongLong();
-                currentRun.setTaskStepTime(id, TaskSteps::TaskStep::Finished, timelog);
-            }
+            auto splittedList = spliceList[1].split(" ", QString::SkipEmptyParts);
+            assert(splittedList.count() > 1);
+
+            auto id = splittedList.first().toULongLong();
+
+            currentRun.setTaskStepTime(id, patternToState(pattern), timelog);
+            currentRun.setTaskStepRunner(id, runner);
         }
-        else if(pattern == 9003)
+        else if(pattern == READY_STATE && runner.contains(SERVER_RUNNER))
             currentRun.setReadyLog(timelog);
 
         lineCpt++;

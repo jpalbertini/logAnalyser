@@ -6,11 +6,14 @@
 class TaskSteps
 {
 public:
-    enum class TaskStep{
+    enum class TaskStep
+    {
+        Unknown,
         Pending,
         Prepare,
         Run,
-        Finished
+        Finished,
+        Canceled,
     };
 
     void setID(qulonglong id)
@@ -36,6 +39,16 @@ public:
     qint64 length() const
     {
         return m_mTasksTimes[TaskStep::Finished] - m_mTasksTimes[TaskStep::Pending];
+    }
+
+    bool isValid() const
+    {
+        if(m_mTasksTimes.contains(TaskStep::Unknown))
+            return false;
+        if(!m_mTasksTimes.contains(TaskStep::Finished) && !m_mTasksTimes.contains(TaskStep::Canceled))
+            return false;
+
+        return true;
     }
 
 private:
